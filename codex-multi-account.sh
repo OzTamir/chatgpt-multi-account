@@ -262,6 +262,24 @@ done
 
 PRIMARY_HOME="$(expand_tilde "$PRIMARY_HOME")"
 
+resolve_bundled_cli() {
+  local app candidate
+  app="$1"
+
+  # Prefer the packaged entrypoint in current apps; retain the legacy layout.
+  for candidate in \
+    "$app/Contents/Resources/codex-cli/bin/codex" \
+    "$app/Contents/Resources/codex"
+  do
+    if [ -f "$candidate" ] && [ -x "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 detect_default_desktop_app() {
   local candidate
 
@@ -273,7 +291,7 @@ detect_default_desktop_app() {
     "/Applications/Codex.app" \
     "$HOME/Applications/Codex.app"
   do
-    if [ -x "$candidate/Contents/Resources/codex" ]; then
+    if resolve_bundled_cli "$candidate" >/dev/null; then
       printf '%s\n' "$candidate"
       return 0
     fi
@@ -313,13 +331,14 @@ CODEX_APP="$(expand_tilde "$CODEX_APP")"
 REGISTRY_DIR="$(expand_tilde "$REGISTRY_DIR")"
 REGISTRY_FILE="$(expand_tilde "$REGISTRY_FILE")"
 
-CODEX_CLI="$CODEX_APP/Contents/Resources/codex"
+CODEX_CLI=""
 CODEX_EXE=""
 
 if [ "$RESET" -ne 1 ]; then
   [ -d "$PRIMARY_HOME" ] || die "primary Codex home does not exist: $PRIMARY_HOME"
   [ -d "$CODEX_APP" ] || die "ChatGPT/Codex desktop app not found: $CODEX_APP"
-  [ -x "$CODEX_CLI" ] || die "bundled Codex CLI not executable: $CODEX_CLI"
+  CODEX_CLI="$(resolve_bundled_cli "$CODEX_APP")" \
+    || die "bundled Codex CLI not found or not executable in $CODEX_APP/Contents/Resources (checked codex-cli/bin/codex and codex)"
   CODEX_EXE="$(resolve_bundle_executable)" \
     || die "desktop app executable not found in: $CODEX_APP/Contents/MacOS"
 fi
