@@ -29,6 +29,8 @@ After the new ChatGPT window opens, sign in with your second account.
 The script auto-detects `/Applications/ChatGPT.app` first and falls back to a
 legacy `/Applications/Codex.app`. It reads the bundle's executable name, so both
 the current `ChatGPT` executable and the former `Codex` executable are supported.
+It detects both the current bundled CLI at `Contents/Resources/codex-cli/bin/codex`
+and the legacy `Contents/Resources/codex` layout.
 To use an app in a different location:
 
 ```bash
